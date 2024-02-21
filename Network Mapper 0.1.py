@@ -3,7 +3,6 @@ import socket
 import csv
 from threading import Thread
 from queue import Queue
-
 # Number of threads to use
 NUM_THREADS = 5
 
@@ -12,7 +11,7 @@ ip_queue = Queue()
 # Queue to collect scan results
 results_queue = Queue()
 
-def scan_ip():
+def scan_ip(a=0):
     nm = nmap.PortScanner()
     while not ip_queue.empty():
         ip = ip_queue.get()
@@ -27,7 +26,8 @@ def scan_ip():
                         name = ip
                     results_queue.put((name, ip, "Network Device"))
         except Exception as e:
-            print(f"Error scanning {ip}: {e}")
+            #print(f"Error scanning {ip}: {e}")
+            a +=1
         finally:
             ip_queue.task_done()
 
@@ -43,7 +43,7 @@ def main():
     # Populate the IP queue here with your target IPs
     for i in range(1, 255):
         for b in range(1, 255):  # Example for a /24 subnet
-            ip_queue.put(f'50.50.{i}.{b}')
+            ip_queue.put(f'5.5.{i}.{b}')
 
     threads = []
     # Start threads
