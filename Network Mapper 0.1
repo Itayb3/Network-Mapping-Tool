@@ -1,8 +1,7 @@
 import nmap
 import socket
 import networkx as nx
-import matplotlib.pyplot as plt
-import tkinter as tk
+import csv
 
 def scan_network():
     # Initialize the network scanner
@@ -37,41 +36,13 @@ def create_network_graph(devices):
 
     return G
 
-def display_connections(node_name):
-    # Placeholder function to display connections for the clicked node
-    # You would replace this with your actual logic to display connections
-    # For demonstration purposes, we'll simply print the node name
-    print(f"Connections for node {node_name}:")
-
-def on_node_click(event):
-    # Get the clicked node
-    node = event.widget.find_withtag("current")[0]
-    node_name = event.widget.gettags(node)[0]
-
-    # Display connections for the clicked node
-    display_connections(node_name)
-
-def visualize_network_graph(G):
-    # Create a Tkinter window
-    root = tk.Tk()
-    root.title("Network Topology")
-
-    # Create a canvas
-    canvas = tk.Canvas(root, width=800, height=600)
-    canvas.pack()
-
-    # Draw the network graph on the canvas
-    pos = nx.spring_layout(G)
-    nx.draw(G, pos, with_labels=True, node_size=700, node_color='skyblue', font_size=8, font_weight='bold', ax=canvas)
-
-    # Bind click event to nodes
-    for node in G.nodes:
-        x, y = pos[node]
-        canvas.create_oval(x - 15, y - 15, x + 15, y + 15, fill="red", tags=node)
-        canvas.tag_bind(node, "<Button-1>", on_node_click)
-
-    # Run the Tkinter event loop
-    root.mainloop()
+def export_network_topology_to_csv(G):
+    # Export the network topology to a CSV file
+    with open('network_topology.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Source', 'Target'])
+        for edge in G.edges():
+            writer.writerow([edge[0], edge[1]])
 
 def main():
     # Scan the network
@@ -80,8 +51,8 @@ def main():
     # Create the network graph
     G = create_network_graph(devices)
 
-    # Visualize the network graph
-    visualize_network_graph(G)
+    # Export the network topology to CSV
+    export_network_topology_to_csv(G)
 
 if __name__ == "__main__":
     main()
