@@ -38,7 +38,7 @@ def create_network_graph(devices):
 
 def export_network_topology_to_csv(G):
     # Export the network topology to a CSV file
-    with open('network_topology.csv', 'w', newline='') as csvfile:
+    with open('C:\Users\ca8855176\Desktop\network_topology.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Source', 'Target'])
         for edge in G.edges():
