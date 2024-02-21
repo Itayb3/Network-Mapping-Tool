@@ -43,7 +43,7 @@ def main():
     # Populate the IP queue here with your target IPs
     for i in range(1, 255):
         for b in range(1, 255):  # Example for a /24 subnet
-            ip_queue.put(f'10.109.{i}.{b}')
+            ip_queue.put(f'50.50.{i}.{b}')
 
     threads = []
     # Start threads
