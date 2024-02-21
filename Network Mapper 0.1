@@ -1,0 +1,87 @@
+import nmap
+import socket
+import networkx as nx
+import matplotlib.pyplot as plt
+import tkinter as tk
+
+def scan_network():
+    # Initialize the network scanner
+    nm = nmap.PortScanner()
+
+    # Scan the network to discover devices
+    nm.scan(hosts='192.168.1.0/24', arguments='-sn')
+
+    # Get the list of discovered devices with names
+    devices = {}
+    for host in nm.all_hosts():
+        try:
+            name = socket.gethostbyaddr(host)[0]
+        except socket.herror:
+            name = host
+        devices[host] = name
+
+    return devices
+
+def create_network_graph(devices):
+    # Create an empty graph
+    G = nx.Graph()
+
+    # Add devices as nodes to the graph
+    for ip, name in devices.items():
+        G.add_node(name, ip=ip)
+
+    # Add connections between devices (assuming connected devices)
+    # You may need to adjust this based on how your network is structured
+    G.add_edge('Router', 'Modem')
+    G.add_edge('Router', 'Switch')
+
+    return G
+
+def display_connections(node_name):
+    # Placeholder function to display connections for the clicked node
+    # You would replace this with your actual logic to display connections
+    # For demonstration purposes, we'll simply print the node name
+    print(f"Connections for node {node_name}:")
+
+def on_node_click(event):
+    # Get the clicked node
+    node = event.widget.find_withtag("current")[0]
+    node_name = event.widget.gettags(node)[0]
+
+    # Display connections for the clicked node
+    display_connections(node_name)
+
+def visualize_network_graph(G):
+    # Create a Tkinter window
+    root = tk.Tk()
+    root.title("Network Topology")
+
+    # Create a canvas
+    canvas = tk.Canvas(root, width=800, height=600)
+    canvas.pack()
+
+    # Draw the network graph on the canvas
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, node_size=700, node_color='skyblue', font_size=8, font_weight='bold', ax=canvas)
+
+    # Bind click event to nodes
+    for node in G.nodes:
+        x, y = pos[node]
+        canvas.create_oval(x - 15, y - 15, x + 15, y + 15, fill="red", tags=node)
+        canvas.tag_bind(node, "<Button-1>", on_node_click)
+
+    # Run the Tkinter event loop
+    root.mainloop()
+
+def main():
+    # Scan the network
+    devices = scan_network()
+
+    # Create the network graph
+    G = create_network_graph(devices)
+
+    # Visualize the network graph
+    visualize_network_graph(G)
+
+if __name__ == "__main__":
+    main()
