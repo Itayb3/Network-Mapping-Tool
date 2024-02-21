@@ -1,58 +1,67 @@
 import nmap
 import socket
-import networkx as nx
 import csv
+from threading import Thread
+from queue import Queue
 
-def scan_network():
-    # Initialize the network scanner
+# Number of threads to use
+NUM_THREADS = 5
+
+# Queue for IPs to scan
+ip_queue = Queue()
+# Queue to collect scan results
+results_queue = Queue()
+
+def scan_ip():
     nm = nmap.PortScanner()
-
-    # Scan the network to discover devices
-    nm.scan(hosts='192.168.1.0/24', arguments='-sn')
-
-    # Get the list of discovered devices with names
-    devices = {}
-    for host in nm.all_hosts():
+    while not ip_queue.empty():
+        ip = ip_queue.get()
         try:
-            name = socket.gethostbyaddr(host)[0]
-        except socket.herror:
-            name = host
-        devices[host] = name
+            nm.scan(hosts=ip, arguments='-p22,23 -sV')
+            for proto in nm[ip].all_protocols():
+                lport = list(nm[ip][proto].keys())
+                if 22 in lport or 23 in lport:
+                    try:
+                        name = socket.gethostbyaddr(ip)[0]
+                    except socket.herror:
+                        name = ip
+                    results_queue.put((name, ip, "Network Device"))
+        except Exception as e:
+            print(f"Error scanning {ip}: {e}")
+        finally:
+            ip_queue.task_done()
 
-    return devices
-
-def create_network_graph(devices):
-    # Create an empty graph
-    G = nx.Graph()
-
-    # Add devices as nodes to the graph
-    for ip, name in devices.items():
-        G.add_node(name, ip=ip)
-
-    # Add connections between devices (assuming connected devices)
-    # You may need to adjust this based on how your network is structured
-    G.add_edge('Router', 'Modem')
-    G.add_edge('Router', 'Switch')
-
-    return G
-
-def export_network_topology_to_csv(G):
-    # Export the network topology to a CSV file
-    with open('C:\Users\ca8855176\Desktop\network_topology.csv', 'w', newline='') as csvfile:
+def export_to_csv():
+    with open('network_topology.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['Source', 'Target'])
-        for edge in G.edges():
-            writer.writerow([edge[0], edge[1]])
+        writer.writerow(['Device Name', 'IP Address', 'Device Type'])
+        while not results_queue.empty():
+            device = results_queue.get()
+            writer.writerow([device[0], device[1], device[2]])
 
 def main():
-    # Scan the network
-    devices = scan_network()
+    # Populate the IP queue here with your target IPs
+    for i in range(1, 255):
+        for b in range(1, 255):  # Example for a /24 subnet
+            ip_queue.put(f'10.109.{i}.{b}')
 
-    # Create the network graph
-    G = create_network_graph(devices)
+    threads = []
+    # Start threads
+    for _ in range(NUM_THREADS):
+        t = Thread(target=scan_ip)
+        t.daemon = True
+        t.start()
+        threads.append(t)
 
-    # Export the network topology to CSV
-    export_network_topology_to_csv(G)
+    # Wait for the IP queue to be processed
+    ip_queue.join()
+
+    # Ensure all threads have finished execution
+    for t in threads:
+        t.join()
+
+    # Export results to CSV
+    export_to_csv()
 
 if __name__ == "__main__":
     main()
