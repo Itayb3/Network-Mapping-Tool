@@ -4,15 +4,15 @@ import csv
 from threading import Thread
 from queue import Queue
 
-# Number of threads to use
+# Number of threads, needs to add choseable options to gui layer
 NUM_THREADS = 15
 
-# Queue for IPs to scan
+# the magic thingy
 ip_queue = Queue()
-# Queue to collect scan results
+# scan result waiting room
 results_queue = Queue()
 
-# Function to perform the scan
+# big boy aint scared to code function
 def scan_ip(total_ips):
     nm = nmap.PortScanner()
     while not ip_queue.empty():
@@ -20,7 +20,7 @@ def scan_ip(total_ips):
         ip = ip_queue.get()
         print(f"Scanning IP number {current_ip_number}/{total_ips}: {ip}")
         try:
-            # Adding OS detection to the arguments
+            # sppose to be adding OS detection to the argument dosnt work perfectly yet, running scans
             nm.scan(hosts=ip, arguments='-p22,23 -sV -O')
             os_info = "Unknown"
             for proto in nm[ip].all_protocols():
@@ -30,7 +30,7 @@ def scan_ip(total_ips):
                         name = socket.gethostbyaddr(ip)[0]
                     except socket.herror:
                         name = ip
-                    # Attempt to retrieve OS information if available
+                    #here i attempt to retrieve OS information if available, awaiting scan results for confirm
                     if 'osclass' in nm[ip] and nm[ip]['osclass']:
                         for osclass in nm[ip]['osclass']:
                             if 'osfamily' in osclass and osclass['osfamily']:
@@ -39,10 +39,10 @@ def scan_ip(total_ips):
                     results_queue.put((name, ip, "Network Device", os_info))
         except Exception as e:
             print(f"Error scanning {ip}: {e}")
-        finally:
-            ip_queue.task_done()
+        finally: 
+            ip_queue.task_done() #this is both cool and also ensure us that the process didnt just die midway
 
-# Function to export the results to CSV
+# export the results to CSV using black magic
 def export_to_csv():
     with open('network_topology.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -54,14 +54,14 @@ def export_to_csv():
 # Main function to set up and start the scanning process
 def main():
     total_ips = 0
-    # Populate the IP queue here with your target IPs
+    #  IP iratiation queue
     for i in range(1, 255):
         for b in range(1, 255):  # Example for a /24 subnet
             ip_queue.put(f'5.5.{i}.{b}')
             total_ips += 1
 
     threads = []
-    # Start threads
+    # Start threads use more threads if pc isnt shit
     for _ in range(NUM_THREADS):
         t = Thread(target=lambda: scan_ip(total_ips))
         t.daemon = True
